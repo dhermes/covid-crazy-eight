@@ -15,6 +15,8 @@ GAME = {
     "all_moves": [],
     "active_value": "",
     "active_suit": "",
+    "consecutive_draw2": 0,
+    "consecutive_skip4": 0,
 }
 LOCK = threading.Lock()
 UNICODE_CARDS = {
@@ -98,6 +100,20 @@ def can_play(card, player_uuid):
         return False
 
     value, suit = card
+
+    # If an 8 is showing, only the suit can match.
+    if GAME["active_value"] == "8":
+        return suit == GAME["active_suit"]
+
+    # If a 4, need to check first if there is an active "skip streak" open.
+    if GAME["active_value"] == "4" and GAME["consecutive_skip4"] > 0:
+        return value == "4"
+
+    # If a 2, need to check first if there is an active "draw 2 streak" open.
+    if GAME["active_value"] == "2" and GAME["consecutive_draw2"] > 0:
+        return value == "2"
+
+    # Don't allow playing an 8 (yet; TO BE IMPLEMENTED).
     if value == "8":
         return False
 
@@ -125,7 +141,16 @@ def player(player_uuid):
             )
 
         if active_player_uuid == player_uuid:
-            moves.append(("1", "DRAW", "Draw 1", True),)
+            if GAME["consecutive_skip4"] > 0:
+                moves.append(("0", "TAKESKIP", "Take Skip", True),)
+            else:
+                if GAME["consecutive_draw2"] > 0:
+                    amount = 2 * GAME["consecutive_draw2"]
+                    moves.append(
+                        (str(amount), "DRAW", f"Draw {amount}", True),
+                    )
+                else:
+                    moves.append(("1", "DRAW", "Draw 1", True),)
 
         return flask.render_template(
             "player.html",
@@ -141,6 +166,28 @@ def player(player_uuid):
 
 @APP.route("/play/<player_uuid>/<value>/<action>", methods=("POST",))
 def play(player_uuid, value, action):
+    if action == "TAKESKIP":
+        with LOCK:
+            if player_uuid != GAME["active_player"]:
+                raise RuntimeError(
+                    "Only active player can take a skip",
+                    player_uuid,
+                    GAME["active_player"],
+                )
+            if value != "0":
+                raise RuntimeError("Take skip value should be 0", value)
+
+            if GAME["consecutive_skip4"] == 0:
+                raise RuntimeError("Must have active skip streak")
+
+            player = GAME["players"][player_uuid]
+            name = player["name"]
+            GAME["all_moves"].append((f"{name} got", "skipped", ""),)
+            GAME["consecutive_skip4"] = 0
+            GAME["active_player"] = player["next"]
+
+            return flask.redirect(f"/player/{player_uuid}")
+
     if action == "DRAW":
         with LOCK:
             if player_uuid != GAME["active_player"]:
@@ -151,11 +198,31 @@ def play(player_uuid, value, action):
                 )
 
             player = GAME["players"][player_uuid]
-            drawn_card = GAME["deck"].pop()
-            player["cards"].append(drawn_card)
-            GAME["active_player"] = player["next"]
             name = player["name"]
-            GAME["all_moves"].append((f"{name} drew", "a card", ""),)
+            if value == "1":
+                if GAME["consecutive_draw2"] != 0:
+                    raise RuntimeError(
+                        "Invalid draw amount", value, GAME["consecutive_draw2"]
+                    )
+
+                drawn_card = GAME["deck"].pop()
+                player["cards"].append(drawn_card)
+                GAME["all_moves"].append((f"{name} drew", "a card", ""),)
+            else:
+                int_value = int(value)
+                if int_value != 2 * GAME["consecutive_draw2"]:
+                    raise RuntimeError(
+                        "Invalid draw amount", value, GAME["consecutive_draw2"]
+                    )
+                for _ in range(int_value):
+                    drawn_card = GAME["deck"].pop()
+                    player["cards"].append(drawn_card)
+                GAME["all_moves"].append(
+                    (f"{name} drew", f"{value} cards", ""),
+                )
+                GAME["consecutive_draw2"] = 0
+
+            GAME["active_player"] = player["next"]
 
             return flask.redirect(f"/player/{player_uuid}")
 
@@ -182,6 +249,10 @@ def play(player_uuid, value, action):
         GAME["buried_cards"].append(top_card)
         GAME["top_card"] = card
         GAME["active_value"] = value
+        if value == "2":
+            GAME["consecutive_draw2"] += 1
+        if value == "4":
+            GAME["consecutive_skip4"] += 1
         GAME["active_suit"] = suit
         player["cards"].remove(card)
         GAME["active_player"] = player["next"]
@@ -212,7 +283,8 @@ def start_game():
     with LOCK:
         reverse_map = {}
         for player in players:
-            player_uuid = str(uuid.uuid4())
+            # player_uuid = str(uuid.uuid4())
+            player_uuid = player
             reverse_map[player] = player_uuid
             GAME["players"][player_uuid] = {"name": player}
             print(f"{player_uuid} <-> {player}")
