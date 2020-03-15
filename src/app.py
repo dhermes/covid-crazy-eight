@@ -97,7 +97,7 @@ def player(player_uuid):
         active_player_uuid = GAME["active_player"]
         active_player = GAME["players"][active_player_uuid]["name"]
         cards = [
-            f"{value}{UNICODE_CARDS[suit]}"
+            (value, suit, f"{value}{UNICODE_CARDS[suit]}")
             for value, suit in sorted(player["cards"], key=for_compare_cards)
         ]
         return flask.render_template(
@@ -106,7 +106,24 @@ def player(player_uuid):
             top_card=top_card,
             active_player=active_player,
             cards=cards,
+            player_uuid=player_uuid,
         )
+
+
+@APP.route("/play/<player_uuid>/<value>/<suit>", methods=("POST",))
+def play(player_uuid, value, suit):
+    card = value, suit
+    if card not in DECK:
+        raise RuntimeError("Invalid card", card)
+
+    with LOCK:
+        # NOTE: Just let a `KeyError` happen here (and below).
+        player = GAME["players"][player_uuid]
+        if card not in player["cards"]:
+            raise RuntimeError("Player does not hold card", player, card)
+        print(player["cards"])
+
+        return flask.redirect(f"/player/{player_uuid}")
 
 
 @APP.route("/", defaults={"path": ""}, methods=METHODS)

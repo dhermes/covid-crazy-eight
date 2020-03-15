@@ -10,8 +10,13 @@
     <div>Active Player: {{ active_player }}</div>
     <div>Your cards:</div>
     <ul id="cards">
-        {% for card in cards %}
-        <li>{{ card }}</li>
+        {% for value, suit, as_display in cards %}
+        <li>
+            <form action="/play/{{ player_uuid }}/{{ value }}/{{ suit }}" method="post">
+                {{ as_display }}
+                <button type="submit" formmethod="post">Play</button>
+            </form>
+        </li>
         {% endfor %}
     </ul>
 </body>
