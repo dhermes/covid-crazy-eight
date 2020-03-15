@@ -6,9 +6,16 @@ import uuid
 import flask
 
 
+PORT = 15071
 APP = flask.Flask(__name__)
 METHODS = ("GET", "POST", "PUT", "PATCH", "DELETE")
-GAME = {"players": {}, "buried_cards": [], "all_moves": []}
+GAME = {
+    "players": {},
+    "buried_cards": [],
+    "all_moves": [],
+    "active_value": "",
+    "active_suit": "",
+}
 LOCK = threading.Lock()
 UNICODE_CARDS = {
     "CLUBS": "\u2663",
@@ -94,9 +101,7 @@ def can_play(card, player_uuid):
     if value == "8":
         return False
 
-    top_card = GAME["top_card"]
-    top_value, top_suit = top_card
-    return value == top_value or suit == top_suit
+    return value == GAME["active_value"] or suit == GAME["active_suit"]
 
 
 @APP.route("/player/<player_uuid>", methods=("GET",))
@@ -106,7 +111,7 @@ def player(player_uuid):
         player = GAME["players"][player_uuid]
         name = player["name"]
         top_card_value, top_card_suit = GAME["top_card"]
-        top_card = f"{top_card_value}{UNICODE_CARDS[top_card_suit]}"
+        top_card_display = f"{top_card_value}{UNICODE_CARDS[top_card_suit]}"
 
         active_player_uuid = GAME["active_player"]
         active_player = GAME["players"][active_player_uuid]["name"]
@@ -127,7 +132,7 @@ def player(player_uuid):
             name=name,
             recent_moves=list(reversed(GAME["all_moves"][-3:])),
             top_card_suit=top_card_suit,
-            top_card=top_card,
+            top_card=top_card_display,
             active_player=active_player,
             moves=moves,
             player_uuid=player_uuid,
@@ -176,6 +181,8 @@ def play(player_uuid, value, action):
         top_card = GAME["top_card"]
         GAME["buried_cards"].append(top_card)
         GAME["top_card"] = card
+        GAME["active_value"] = value
+        GAME["active_suit"] = suit
         player["cards"].remove(card)
         GAME["active_player"] = player["next"]
         name = player["name"]
@@ -215,6 +222,13 @@ def start_game():
             next_index = (i + 1) % len(players)
             next_player_uuid = reverse_map[players[next_index]]
             GAME["players"][player_uuid]["next"] = next_player_uuid
+            # BEGIN: Throw this out
+            import webbrowser
+
+            u = f"http://localhost:{PORT}/player/{player_uuid}"
+            print(u)
+            # webbrowser.open(u)
+            #   END: Throw this out
 
         new_deck = list(DECK)
         random.shuffle(new_deck)
@@ -240,10 +254,13 @@ def start_game():
                 random.shuffle(new_deck)
 
         GAME["top_card"] = top_card
+        top_card_value, top_card_suit = top_card
+        GAME["active_value"] = top_card_value
+        GAME["active_suit"] = top_card_suit
         GAME["deck"] = new_deck
         GAME["active_player"] = reverse_map[players[0]]
 
 
 if __name__ == "__main__":
     start_game()
-    APP.run(host="0.0.0.0", port=15071, debug=True)
+    APP.run(host="0.0.0.0", port=PORT, debug=True)
