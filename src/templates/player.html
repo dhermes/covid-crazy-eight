@@ -10,12 +10,16 @@
     <div>Active Player: {{ active_player }}</div>
     <div>Your cards:</div>
     <ul id="cards">
-        {% for value, suit, as_display in cards %}
+        {% for value, suit, as_display, can_play in cards %}
         <li>
+            {% if can_play %}
             <form action="/play/{{ player_uuid }}/{{ value }}/{{ suit }}" method="post">
                 {{ as_display }}
                 <button type="submit" formmethod="post">Play</button>
             </form>
+            {% else %}
+            {{ as_display }}
+            {% endif %}
         </li>
         {% endfor %}
     </ul>

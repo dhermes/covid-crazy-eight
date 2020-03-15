@@ -85,6 +85,14 @@ def for_compare_cards(card):
     return DECK.index(card)
 
 
+def can_play(card):
+    # NOTE: This assumes the deck is locked.
+    value, suit = card
+    top_card = GAME["top_card"]
+    top_value, top_suit = top_card
+    return value == top_value or suit == top_suit
+
+
 @APP.route("/player/<player_uuid>", methods=("GET",))
 def player(player_uuid):
     with LOCK:
@@ -96,10 +104,13 @@ def player(player_uuid):
 
         active_player_uuid = GAME["active_player"]
         active_player = GAME["players"][active_player_uuid]["name"]
-        cards = [
-            (value, suit, f"{value}{UNICODE_CARDS[suit]}")
-            for value, suit in sorted(player["cards"], key=for_compare_cards)
-        ]
+
+        cards = []
+        for card in sorted(player["cards"], key=for_compare_cards):
+            value, suit = card
+            as_display = f"{value}{UNICODE_CARDS[suit]}"
+            cards.append((value, suit, as_display, can_play(card)))
+
         return flask.render_template(
             "player.html",
             name=name,
