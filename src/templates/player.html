@@ -16,7 +16,7 @@
 <body>
     <h1>{{ name }}</h1>
     <div>
-        Top Card: <div class="{{ top_card_suit }}">{{ top_card }}</div>
+        Top Card: <span class="{{ top_card_suit }}">{{ top_card }}</span>
     </div>
     {% if recent_moves %}
     <div id="recent-moves">
@@ -33,11 +33,13 @@
     <ul id="cards">
         {% for value, action, as_display, can_play in moves %}
         <li>
-            <div class="{{ action }}">{{ as_display }}</div>
             {% if can_play %}
             <form action="/play/{{ player_uuid }}/{{ value }}/{{ action }}" method="post">
+                <span class="{{ action }}">{{ as_display }}</span>
                 <button type="submit" formmethod="post">Play</button>
             </form>
+            {% else %}
+            <span class="{{ action }}">{{ as_display }}</span>
             {% endif %}
         </li>
         {% endfor %}
