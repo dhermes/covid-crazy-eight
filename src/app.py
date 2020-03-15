@@ -88,6 +88,9 @@ def for_compare_cards(card):
 def can_play(card):
     # NOTE: This assumes the deck is locked.
     value, suit = card
+    if value == "8":
+        return True
+
     top_card = GAME["top_card"]
     top_value, top_suit = top_card
     return value == top_value or suit == top_suit
