@@ -8,7 +8,7 @@ import flask
 
 APP = flask.Flask(__name__)
 METHODS = ("GET", "POST", "PUT", "PATCH", "DELETE")
-GAME = {"players": {}}
+GAME = {"players": {}, "buried_cards": []}
 LOCK = threading.Lock()
 UNICODE_CARDS = {
     "CLUBS": "\u2663",
@@ -72,7 +72,7 @@ DECK = (
 )
 
 
-@APP.route("/favicon.ico")
+@APP.route("/favicon.ico", methods=("GET",))
 def favicon():
     return flask.send_from_directory(
         os.path.join(APP.root_path, "static"),
@@ -85,7 +85,7 @@ def for_compare_cards(card):
     return DECK.index(card)
 
 
-@APP.route("/player/<player_uuid>")
+@APP.route("/player/<player_uuid>", methods=("GET",))
 def player(player_uuid):
     with LOCK:
         # NOTE: Just let a `KeyError` happen here (and below).
