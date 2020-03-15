@@ -5,7 +5,7 @@
 To run
 
 ```
-python src/app.py
+PLAYERS=Joe,Eve,Tim python src/app.py
 ```
 
 I'll probably cut a lot of corners while making this.
