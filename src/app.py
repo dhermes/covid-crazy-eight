@@ -8,7 +8,7 @@ import flask
 
 APP = flask.Flask(__name__)
 METHODS = ("GET", "POST", "PUT", "PATCH", "DELETE")
-GAME = {"players": {}, "buried_cards": []}
+GAME = {"players": {}, "buried_cards": [], "all_moves": []}
 LOCK = threading.Lock()
 UNICODE_CARDS = {
     "CLUBS": "\u2663",
@@ -125,6 +125,7 @@ def player(player_uuid):
         return flask.render_template(
             "player.html",
             name=name,
+            recent_moves=list(reversed(GAME["all_moves"][-3:])),
             top_card_suit=top_card_suit,
             top_card=top_card,
             active_player=active_player,
@@ -148,6 +149,8 @@ def play(player_uuid, value, action):
             drawn_card = GAME["deck"].pop()
             player["cards"].append(drawn_card)
             GAME["active_player"] = player["next"]
+            name = player["name"]
+            GAME["all_moves"].append(f"{name} drew a card")
 
             return flask.redirect(f"/player/{player_uuid}")
 
@@ -175,6 +178,9 @@ def play(player_uuid, value, action):
         GAME["top_card"] = card
         player["cards"].remove(card)
         GAME["active_player"] = player["next"]
+        name = player["name"]
+        as_display = f"{value}{UNICODE_CARDS[suit]}"
+        GAME["all_moves"].append(f"{name} played {as_display}")
 
         return flask.redirect(f"/player/{player_uuid}")
 

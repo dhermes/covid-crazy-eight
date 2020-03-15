@@ -18,6 +18,16 @@
     <div>
         Top Card: <div class="{{ top_card_suit }}">{{ top_card }}</div>
     </div>
+    {% if recent_moves %}
+    <div id="recent-moves">
+        <div>Recent Moves:</div>
+        <ul>
+            {% for move_text in recent_moves %}
+            <li>{{ move_text }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
     <div>Active Player: {{ active_player }}</div>
     <div>Your cards:</div>
     <ul id="cards">
