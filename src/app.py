@@ -121,7 +121,13 @@ def play(player_uuid, value, suit):
         player = GAME["players"][player_uuid]
         if card not in player["cards"]:
             raise RuntimeError("Player does not hold card", player, card)
-        print(player["cards"])
+
+        top_card = GAME["top_card"]
+        top_value, top_suit = top_card
+        if value != top_value and suit != top_suit:
+            raise RuntimeError(
+                "Card cannot be played on top card", card, top_card
+            )
 
         return flask.redirect(f"/player/{player_uuid}")
 
