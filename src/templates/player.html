@@ -21,11 +21,11 @@
     <div>Active Player: {{ active_player }}</div>
     <div>Your cards:</div>
     <ul id="cards">
-        {% for value, suit, as_display, can_play in cards %}
+        {% for value, action, as_display, can_play in moves %}
         <li>
-            <div class="{{ suit }}">{{ as_display }}</div>
+            <div class="{{ action }}">{{ as_display }}</div>
             {% if can_play %}
-            <form action="/play/{{ player_uuid }}/{{ value }}/{{ suit }}" method="post">
+            <form action="/play/{{ player_uuid }}/{{ value }}/{{ action }}" method="post">
                 <button type="submit" formmethod="post">Play</button>
             </form>
             {% endif %}

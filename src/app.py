@@ -111,13 +111,16 @@ def player(player_uuid):
         active_player_uuid = GAME["active_player"]
         active_player = GAME["players"][active_player_uuid]["name"]
 
-        cards = []
+        moves = []
         for card in sorted(player["cards"], key=for_compare_cards):
             value, suit = card
             as_display = f"{value}{UNICODE_CARDS[suit]}"
-            cards.append(
+            moves.append(
                 (value, suit, as_display, can_play(card, player_uuid))
             )
+
+        if active_player_uuid == player_uuid:
+            moves.append(("1", "DRAW", "Draw 1", True),)
 
         return flask.render_template(
             "player.html",
@@ -125,13 +128,30 @@ def player(player_uuid):
             top_card_suit=top_card_suit,
             top_card=top_card,
             active_player=active_player,
-            cards=cards,
+            moves=moves,
             player_uuid=player_uuid,
         )
 
 
-@APP.route("/play/<player_uuid>/<value>/<suit>", methods=("POST",))
-def play(player_uuid, value, suit):
+@APP.route("/play/<player_uuid>/<value>/<action>", methods=("POST",))
+def play(player_uuid, value, action):
+    if action == "DRAW":
+        with LOCK:
+            if player_uuid != GAME["active_player"]:
+                raise RuntimeError(
+                    "Only active player can draw",
+                    player_uuid,
+                    GAME["active_player"],
+                )
+
+            player = GAME["players"][player_uuid]
+            drawn_card = GAME["deck"].pop()
+            player["cards"].append(drawn_card)
+            GAME["active_player"] = player["next"]
+
+            return flask.redirect(f"/player/{player_uuid}")
+
+    suit = action
     card = value, suit
     if card not in DECK:
         raise RuntimeError("Invalid card", card)
