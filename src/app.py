@@ -22,8 +22,8 @@ LOCK = threading.Lock()
 UNICODE_CARDS = {
     "CLUBS": "\u2663",
     "DIAMONDS": "\u2666",
-    "HEARTS": "\u2665",
     "SPADES": "\u2660",
+    "HEARTS": "\u2665",
 }
 DECK = (
     ("A", "CLUBS"),
@@ -113,10 +113,6 @@ def can_play(card, player_uuid):
     if GAME["active_value"] == "2" and GAME["consecutive_draw2"] > 0:
         return value == "2"
 
-    # Don't allow playing an 8 (yet; TO BE IMPLEMENTED).
-    if value == "8":
-        return False
-
     return value == GAME["active_value"] or suit == GAME["active_suit"]
 
 
@@ -136,9 +132,14 @@ def player(player_uuid):
         for card in sorted(player["cards"], key=for_compare_cards):
             value, suit = card
             as_display = f"{value}{UNICODE_CARDS[suit]}"
-            moves.append(
-                (value, suit, as_display, can_play(card, player_uuid))
-            )
+            can_play_here = can_play(card, player_uuid)
+            if can_play_here and value == "8":
+                for new_suit in ("CLUBS", "DIAMONDS", "SPADES", "HEARTS"):
+                    extended = f"{as_display} becomes {new_suit}"
+                    action = f"CHANGE-{new_suit}"
+                    moves.append((suit, action, extended, True))
+            else:
+                moves.append((value, suit, as_display, can_play_here))
 
         if active_player_uuid == player_uuid:
             if GAME["consecutive_skip4"] > 0:
@@ -166,6 +167,50 @@ def player(player_uuid):
 
 @APP.route("/play/<player_uuid>/<value>/<action>", methods=("POST",))
 def play(player_uuid, value, action):
+    for change_suit in ("CLUBS", "DIAMONDS", "SPADES", "HEARTS"):
+        target_action = f"CHANGE-{change_suit}"
+        if action == target_action:
+            with LOCK:
+                if player_uuid != GAME["active_player"]:
+                    raise RuntimeError(
+                        "Only active player can play an 8 change",
+                        player_uuid,
+                        GAME["active_player"],
+                    )
+
+                old_suit = value
+                if old_suit not in ("CLUBS", "DIAMONDS", "SPADES", "HEARTS"):
+                    raise RuntimeError("Old suit invalid", old_suit)
+
+                card = ("8", old_suit)
+                if not can_play(card, player_uuid):
+                    raise RuntimeError(
+                        "Card cannot be played on top card for current player",
+                        card,
+                        GAME["top_card"],
+                        player_uuid,
+                    )
+
+                top_card = GAME["top_card"]
+                GAME["buried_cards"].append(top_card)
+                GAME["top_card"] = card
+                GAME["active_value"] = ""
+                GAME["active_suit"] = change_suit
+                player = GAME["players"][player_uuid]
+                player["cards"].remove(card)
+                GAME["active_player"] = player["next"]
+                name = player["name"]
+                as_display = f"8{UNICODE_CARDS[old_suit]}"
+                GAME["all_moves"].append(
+                    (
+                        f"{name} changed to {change_suit} with",
+                        as_display,
+                        old_suit,
+                    )
+                )
+
+                return flask.redirect(f"/player/{player_uuid}")
+
     if action == "TAKESKIP":
         with LOCK:
             if player_uuid != GAME["active_player"]:
@@ -174,6 +219,7 @@ def play(player_uuid, value, action):
                     player_uuid,
                     GAME["active_player"],
                 )
+
             if value != "0":
                 raise RuntimeError("Take skip value should be 0", value)
 
