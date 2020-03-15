@@ -88,19 +88,24 @@ def for_compare_cards(card):
 @APP.route("/player/<player_uuid>")
 def player(player_uuid):
     with LOCK:
-        player = GAME.get("players", {}).get(player_uuid)
-        if player is None:
-            raise RuntimeError("Unknown player", player_uuid)
-
+        # NOTE: Just let a `KeyError` happen here (and below).
+        player = GAME["players"][player_uuid]
         name = player["name"]
         value, suit = GAME["top_card"]
         top_card = f"{value}{UNICODE_CARDS[suit]}"
-        cards = ", ".join(
+
+        active_player_uuid = GAME["active_player"]
+        active_player = GAME["players"][active_player_uuid]["name"]
+        cards = [
             f"{value}{UNICODE_CARDS[suit]}"
             for value, suit in sorted(player["cards"], key=for_compare_cards)
-        )
+        ]
         return flask.render_template(
-            "player.html", name=name, top_card=top_card, cards=cards,
+            "player.html",
+            name=name,
+            top_card=top_card,
+            active_player=active_player,
+            cards=cards,
         )
 
 
@@ -154,6 +159,7 @@ def start_game():
 
         GAME["top_card"] = top_card
         GAME["deck"] = new_deck
+        GAME["active_player"] = reverse_map[players[0]]
 
 
 if __name__ == "__main__":
