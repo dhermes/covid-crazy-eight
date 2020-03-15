@@ -99,8 +99,8 @@ def player(player_uuid):
         # NOTE: Just let a `KeyError` happen here (and below).
         player = GAME["players"][player_uuid]
         name = player["name"]
-        value, suit = GAME["top_card"]
-        top_card = f"{value}{UNICODE_CARDS[suit]}"
+        top_card_value, top_card_suit = GAME["top_card"]
+        top_card = f"{top_card_value}{UNICODE_CARDS[top_card_suit]}"
 
         active_player_uuid = GAME["active_player"]
         active_player = GAME["players"][active_player_uuid]["name"]
@@ -114,6 +114,7 @@ def player(player_uuid):
         return flask.render_template(
             "player.html",
             name=name,
+            top_card_suit=top_card_suit,
             top_card=top_card,
             active_player=active_player,
             cards=cards,

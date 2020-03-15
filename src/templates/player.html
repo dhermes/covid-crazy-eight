@@ -2,23 +2,32 @@
 
 <head>
     <title>Crazy Eights Game</title>
+    <style>
+        .DIAMONDS {
+            color: red;
+        }
+
+        .HEARTS {
+            color: red;
+        }
+    </style>
 </head>
 
 <body>
     <h1>{{ name }}</h1>
-    <div>Top Card: {{ top_card }}</div>
+    <div>
+        Top Card: <div class="{{ top_card_suit }}">{{ top_card }}</div>
+    </div>
     <div>Active Player: {{ active_player }}</div>
     <div>Your cards:</div>
     <ul id="cards">
         {% for value, suit, as_display, can_play in cards %}
         <li>
+            <div class="{{ suit }}">{{ as_display }}</div>
             {% if can_play %}
             <form action="/play/{{ player_uuid }}/{{ value }}/{{ suit }}" method="post">
-                {{ as_display }}
                 <button type="submit" formmethod="post">Play</button>
             </form>
-            {% else %}
-            {{ as_display }}
             {% endif %}
         </li>
         {% endfor %}
