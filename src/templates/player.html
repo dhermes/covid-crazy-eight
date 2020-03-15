@@ -22,8 +22,8 @@
     <div id="recent-moves">
         <div>Recent Moves:</div>
         <ul>
-            {% for move_text in recent_moves %}
-            <li>{{ move_text }}</li>
+            {% for move_preamble, move_text, action in recent_moves %}
+            <li>{{ move_preamble }} <span class="{{ action }}">{{ move_text }}</span></li>
             {% endfor %}
         </ul>
     </div>

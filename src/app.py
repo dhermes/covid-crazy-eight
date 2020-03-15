@@ -150,7 +150,7 @@ def play(player_uuid, value, action):
             player["cards"].append(drawn_card)
             GAME["active_player"] = player["next"]
             name = player["name"]
-            GAME["all_moves"].append(f"{name} drew a card")
+            GAME["all_moves"].append((f"{name} drew", "a card", ""),)
 
             return flask.redirect(f"/player/{player_uuid}")
 
@@ -180,7 +180,7 @@ def play(player_uuid, value, action):
         GAME["active_player"] = player["next"]
         name = player["name"]
         as_display = f"{value}{UNICODE_CARDS[suit]}"
-        GAME["all_moves"].append(f"{name} played {as_display}")
+        GAME["all_moves"].append((f"{name} played", as_display, suit),)
 
         return flask.redirect(f"/player/{player_uuid}")
 
