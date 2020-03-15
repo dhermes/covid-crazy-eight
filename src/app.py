@@ -329,8 +329,7 @@ def start_game():
     with LOCK:
         reverse_map = {}
         for player in players:
-            # player_uuid = str(uuid.uuid4())
-            player_uuid = player
+            player_uuid = str(uuid.uuid4())
             reverse_map[player] = player_uuid
             GAME["players"][player_uuid] = {"name": player}
             print(f"{player_uuid} <-> {player}")
@@ -340,13 +339,6 @@ def start_game():
             next_index = (i + 1) % len(players)
             next_player_uuid = reverse_map[players[next_index]]
             GAME["players"][player_uuid]["next"] = next_player_uuid
-            # BEGIN: Throw this out
-            import webbrowser
-
-            u = f"http://localhost:{PORT}/player/{player_uuid}"
-            print(u)
-            # webbrowser.open(u)
-            #   END: Throw this out
 
         new_deck = list(DECK)
         random.shuffle(new_deck)
