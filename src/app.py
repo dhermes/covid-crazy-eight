@@ -92,7 +92,7 @@ def can_play(card, player_uuid):
 
     value, suit = card
     if value == "8":
-        return True
+        return False
 
     top_card = GAME["top_card"]
     top_value, top_suit = top_card
