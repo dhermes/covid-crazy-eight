@@ -85,8 +85,11 @@ def for_compare_cards(card):
     return DECK.index(card)
 
 
-def can_play(card):
+def can_play(card, player_uuid):
     # NOTE: This assumes the deck is locked.
+    if player_uuid != GAME["active_player"]:
+        return False
+
     value, suit = card
     if value == "8":
         return True
@@ -112,7 +115,9 @@ def player(player_uuid):
         for card in sorted(player["cards"], key=for_compare_cards):
             value, suit = card
             as_display = f"{value}{UNICODE_CARDS[suit]}"
-            cards.append((value, suit, as_display, can_play(card)))
+            cards.append(
+                (value, suit, as_display, can_play(card, player_uuid))
+            )
 
         return flask.render_template(
             "player.html",
@@ -137,10 +142,19 @@ def play(player_uuid, value, suit):
         if card not in player["cards"]:
             raise RuntimeError("Player does not hold card", player, card)
 
-        if not can_play(card):
+        if not can_play(card, player_uuid):
             raise RuntimeError(
-                "Card cannot be played on top card", card, GAME["top_card"],
+                "Card cannot be played on top card for current player",
+                card,
+                GAME["top_card"],
+                player_uuid,
             )
+
+        top_card = GAME["top_card"]
+        GAME["buried_cards"].append(top_card)
+        GAME["top_card"] = card
+        player["cards"].remove(card)
+        GAME["active_player"] = player["next"]
 
         return flask.redirect(f"/player/{player_uuid}")
 
@@ -169,6 +183,12 @@ def start_game():
             reverse_map[player] = player_uuid
             GAME["players"][player_uuid] = {"name": player}
             print(f"{player_uuid} <-> {player}")
+
+        for i, player in enumerate(players):
+            player_uuid = reverse_map[player]
+            next_index = (i + 1) % len(players)
+            next_player_uuid = reverse_map[players[next_index]]
+            GAME["players"][player_uuid]["next"] = next_player_uuid
 
         new_deck = list(DECK)
         random.shuffle(new_deck)
