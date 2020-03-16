@@ -323,11 +323,11 @@ def play(player_uuid, value, action):
             GAME["consecutive_skip4"] += 1
         GAME["active_suit"] = suit
         player["cards"].remove(card)
+        name = player["name"]
         if not player["cards"]:
             GAME["winner"] = name
 
         GAME["active_player"] = player["next"]
-        name = player["name"]
         as_display = f"{value}{UNICODE_CARDS[suit]}"
         GAME["all_moves"].append((f"{name} played", as_display, suit),)
 
