@@ -7,6 +7,7 @@ import flask
 
 
 PORT = 15071
+DEBUG = "DEBUG" in os.environ
 APP = flask.Flask(__name__)
 METHODS = ("GET", "POST", "PUT", "PATCH", "DELETE")
 GAME = {
@@ -197,7 +198,9 @@ def player(player_uuid):
 
         active_player = GAME["players"][active_player_uuid]["name"]
         active_player_count = len(GAME["players"][active_player_uuid]["cards"])
-        ordered_players = [(active_player, active_player_count, active_player_uuid == winner)]
+        ordered_players = [
+            (active_player, active_player_count, active_player_uuid == winner)
+        ]
 
         current_uuid = active_player_uuid
         num_players = len(GAME["players"])
@@ -205,7 +208,9 @@ def player(player_uuid):
             current_uuid = GAME["players"][current_uuid]["next"]
             current_name = GAME["players"][current_uuid]["name"]
             current_count = len(GAME["players"][current_uuid]["cards"])
-            ordered_players.append((current_name, current_count, current_uuid == winner))
+            ordered_players.append(
+                (current_name, current_count, current_uuid == winner)
+            )
 
         return flask.render_template(
             "player.html",
@@ -451,4 +456,4 @@ def start_game():
 
 if __name__ == "__main__":
     start_game()
-    APP.run(host="0.0.0.0", port=PORT, debug=True)
+    APP.run(host="0.0.0.0", port=PORT, debug=DEBUG)
