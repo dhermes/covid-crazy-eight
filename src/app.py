@@ -15,9 +15,11 @@ GAME = {
     "all_moves": [],
     "active_value": "",
     "active_suit": "",
+    "pending8": None,
     "consecutive_draw2": 0,
     "consecutive_skip4": 0,
     "winner": None,
+    "top_card_extra": "",
 }
 LOCK = threading.Lock()
 UNICODE_CARDS = {
@@ -155,29 +157,31 @@ def player(player_uuid):
         active_player_uuid = GAME["active_player"]
 
         moves = []
+        choosing8 = (
+            GAME["pending8"] is not None and active_player_uuid == player_uuid
+        )
+        if choosing8:
+            for new_suit in ("CLUBS", "DIAMONDS", "SPADES", "HEARTS"):
+                extended = flask.Markup(
+                    f"Change suit to {suit_span(new_suit)}"
+                )
+                action = f"CHANGE-{new_suit}"
+                moves.append((GAME["pending8"], action, extended, True))
+
         for card in sorted(player["cards"], key=for_compare_cards):
             value, suit = card
             as_display = f"{value}{UNICODE_CARDS[suit]}"
             can_play_here = can_play(card, player_uuid)
-            if can_play_here and value == "8":
-                for new_suit in ("CLUBS", "DIAMONDS", "SPADES", "HEARTS"):
-                    extended = f"{as_display} becomes {new_suit}"
-                    action = f"CHANGE-{new_suit}"
-                    moves.append((suit, action, extended, True))
-            else:
-                moves.append((value, suit, as_display, can_play_here))
+            moves.append((value, suit, as_display, can_play_here))
 
         if active_player_uuid == player_uuid:
             if GAME["consecutive_skip4"] > 0:
                 moves.append(("0", "TAKESKIP", "Take Skip", True),)
-            else:
-                if GAME["consecutive_draw2"] > 0:
-                    amount = 2 * GAME["consecutive_draw2"]
-                    moves.append(
-                        (str(amount), "DRAW", f"Draw {amount}", True),
-                    )
-                else:
-                    moves.append(("1", "DRAW", "Draw 1", True),)
+            elif GAME["consecutive_draw2"] > 0:
+                amount = 2 * GAME["consecutive_draw2"]
+                moves.append((str(amount), "DRAW", f"Draw {amount}", True),)
+            elif not choosing8:
+                moves.append(("1", "DRAW", "Draw 1", True),)
 
         active_player = GAME["players"][active_player_uuid]["name"]
         active_player_count = len(GAME["players"][active_player_uuid]["cards"])
@@ -197,11 +201,16 @@ def player(player_uuid):
             recent_moves=list(reversed(GAME["all_moves"][-3:])),
             top_card_suit=top_card_suit,
             top_card=top_card_display,
+            top_card_extra=GAME["top_card_extra"],
             ordered_players=ordered_players,
             moves=moves,
             player_uuid=player_uuid,
             current_turn=len(GAME["all_moves"]),
         )
+
+
+def suit_span(suit):
+    return f'<span class="{suit}">{UNICODE_CARDS[suit]}</span>'
 
 
 @APP.route("/play/<player_uuid>/<value>/<action>", methods=("POST",))
@@ -223,34 +232,24 @@ def play(player_uuid, value, action):
                 if old_suit not in ("CLUBS", "DIAMONDS", "SPADES", "HEARTS"):
                     raise RuntimeError("Old suit invalid", old_suit)
 
-                card = ("8", old_suit)
-                if not can_play(card, player_uuid):
-                    raise RuntimeError(
-                        "Card cannot be played on top card for current player",
-                        card,
-                        GAME["top_card"],
-                        player_uuid,
-                    )
+                if GAME["pending8"] != old_suit:
+                    raise RuntimeError("Invalid pending crazy 8")
 
-                top_card = GAME["top_card"]
-                GAME["buried_cards"].append(top_card)
-                GAME["top_card"] = card
-                GAME["active_value"] = ""
+                GAME["pending8"] = None
                 GAME["active_suit"] = change_suit
+                GAME["active_player"] = player_uuid
+                span_elt = suit_span(change_suit)
+                GAME["top_card_extra"] = flask.Markup(f" ({span_elt})")
+
                 player = GAME["players"][player_uuid]
-                player["cards"].remove(card)
                 GAME["active_player"] = player["next"]
                 name = player["name"]
                 as_display = f"8{UNICODE_CARDS[old_suit]}"
-                GAME["all_moves"].append(
-                    (
-                        f"{name} changed to {UNICODE_CARDS[change_suit]} with",
-                        as_display,
-                        old_suit,
-                    )
+
+                with_markup = flask.Markup(
+                    f"{name} changed to {span_elt} with"
                 )
-                if not player["cards"]:
-                    GAME["winner"] = name
+                GAME["all_moves"].append((with_markup, as_display, old_suit,))
 
                 return flask.redirect(f"/player/{player_uuid}")
 
@@ -337,6 +336,7 @@ def play(player_uuid, value, action):
         top_card = GAME["top_card"]
         GAME["buried_cards"].append(top_card)
         GAME["top_card"] = card
+        GAME["top_card_extra"] = ""
         GAME["active_value"] = value
         if value == "2":
             GAME["consecutive_draw2"] += 1
@@ -349,6 +349,12 @@ def play(player_uuid, value, action):
             GAME["winner"] = name
 
         GAME["active_player"] = player["next"]
+        if value == "8":
+            GAME["pending8"] = suit
+            GAME["active_value"] = ""
+            GAME["active_suit"] = ""
+            GAME["active_player"] = player_uuid
+
         as_display = f"{value}{UNICODE_CARDS[suit]}"
         GAME["all_moves"].append((f"{name} played", as_display, suit),)
 
@@ -409,6 +415,7 @@ def start_game():
                 random.shuffle(new_deck)
 
         GAME["top_card"] = top_card
+        GAME["top_card_extra"] = ""
         top_card_value, top_card_suit = top_card
         GAME["active_value"] = top_card_value
         GAME["active_suit"] = top_card_suit
