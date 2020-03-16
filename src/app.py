@@ -102,6 +102,12 @@ def admin():
     return flask.render_template("admin.html", players=players)
 
 
+@APP.route("/active", methods=("GET",))
+def active():
+    with LOCK:
+        return flask.jsonify({"turn": len(GAME["all_moves"])})
+
+
 def for_compare_cards(card):
     return DECK.index(card)
 
@@ -183,6 +189,7 @@ def player(player_uuid):
             active_player=active_player,
             moves=moves,
             player_uuid=player_uuid,
+            current_turn=len(GAME["all_moves"]),
         )
 
 

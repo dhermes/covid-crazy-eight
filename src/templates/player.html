@@ -48,10 +48,21 @@
     </ul>
 
     <script language="JavaScript" type="text/javascript">
-      function fullReload() {
-        window.location.reload(false);
+      function checkReload() {
+        const currentTurn = {{ current_turn }};
+        const url = `${window.location.origin}/active`;
+        fetch(url)
+          .then(response => response.json())
+          .then(response => {
+            if (response.turn !== currentTurn) {
+              window.location.reload(false);
+            };
+        }, error => {
+            console.error(error);
+        });
       }
-      setTimeout(fullReload, 5000);
+
+      setInterval(checkReload, 5000);
     </script>
   </body>
 </html>
