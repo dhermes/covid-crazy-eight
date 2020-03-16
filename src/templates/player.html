@@ -27,7 +27,14 @@
       </ul>
     </div>
     {% endif %}
-    <div>Active Player: {{ active_player }}</div>
+    <div>
+      Players:
+      <ul id="player">
+        {% for player, count in ordered_players %}
+        <li>{{ player }} ({{ count }} card{% if count != 1 %}s{% endif %}{% if loop.index0 == 0 %}, Active{% endif %})</li>
+        {% endfor %}
+      </ul>
+    </div>
     <div>Your cards:</div>
     <ul id="cards">
       {% for value, action, as_display, can_play in moves %}

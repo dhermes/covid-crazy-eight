@@ -153,7 +153,6 @@ def player(player_uuid):
         top_card_display = f"{top_card_value}{UNICODE_CARDS[top_card_suit]}"
 
         active_player_uuid = GAME["active_player"]
-        active_player = GAME["players"][active_player_uuid]["name"]
 
         moves = []
         for card in sorted(player["cards"], key=for_compare_cards):
@@ -180,13 +179,25 @@ def player(player_uuid):
                 else:
                     moves.append(("1", "DRAW", "Draw 1", True),)
 
+        active_player = GAME["players"][active_player_uuid]["name"]
+        active_player_count = len(GAME["players"][active_player_uuid]["cards"])
+        ordered_players = [(active_player, active_player_count)]
+
+        current_uuid = active_player_uuid
+        num_players = len(GAME["players"])
+        for _ in range(num_players - 1):
+            current_uuid = GAME["players"][current_uuid]["next"]
+            current_name = GAME["players"][current_uuid]["name"]
+            current_count = len(GAME["players"][current_uuid]["cards"])
+            ordered_players.append((current_name, current_count))
+
         return flask.render_template(
             "player.html",
             name=name,
             recent_moves=list(reversed(GAME["all_moves"][-3:])),
             top_card_suit=top_card_suit,
             top_card=top_card_display,
-            active_player=active_player,
+            ordered_players=ordered_players,
             moves=moves,
             player_uuid=player_uuid,
             current_turn=len(GAME["all_moves"]),
