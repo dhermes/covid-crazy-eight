@@ -6,7 +6,7 @@ import uuid
 import flask
 
 
-PORT = 15071
+PORT = int(os.environ.get("PORT", 15071))
 DEBUG = "DEBUG" in os.environ
 APP = flask.Flask(__name__)
 METHODS = ("GET", "POST", "PUT", "PATCH", "DELETE")
