@@ -233,7 +233,7 @@ def play(player_uuid, value, action):
                 as_display = f"8{UNICODE_CARDS[old_suit]}"
                 GAME["all_moves"].append(
                     (
-                        f"{name} changed to {change_suit} with",
+                        f"{name} changed to {UNICODE_CARDS[change_suit]} with",
                         as_display,
                         old_suit,
                     )
