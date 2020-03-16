@@ -30,8 +30,8 @@
     <div>
       Players:
       <ul id="player">
-        {% for player, count in ordered_players %}
-        <li>{{ player }} ({{ count }} card{% if count != 1 %}s{% endif %}{% if loop.index0 == 0 %}, Active{% endif %})</li>
+        {% for player, count, did_win in ordered_players %}
+        <li>{{ player }} ({{ count }} card{% if count != 1 %}s{% endif %}{% if did_win %}, <strong>WINNER</strong>{% endif %})</li>
         {% endfor %}
       </ul>
     </div>

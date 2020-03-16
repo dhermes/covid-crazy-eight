@@ -118,6 +118,9 @@ def can_play(card, player_uuid):
     if player_uuid != GAME["active_player"]:
         return False
 
+    if GAME["winner"] is not None:
+        return False
+
     value, suit = card
 
     # If a 4, need to check first if there is an active "skip streak" open.
@@ -158,10 +161,7 @@ def player(player_uuid):
         player = GAME["players"][player_uuid]
         name = player["name"]
         winner = GAME["winner"]
-        if winner is not None:
-            return flask.render_template(
-                "over.html", name=name, winner=winner,
-            )
+        game_over = winner is not None
 
         top_card_value, top_card_suit = GAME["top_card"]
         top_card_display = f"{top_card_value}{UNICODE_CARDS[top_card_suit]}"
@@ -192,12 +192,12 @@ def player(player_uuid):
             elif GAME["consecutive_draw2"] > 0:
                 amount = 2 * GAME["consecutive_draw2"]
                 moves.append((str(amount), "DRAW", f"Draw {amount}", True),)
-            elif not choosing8:
+            elif not (choosing8 or game_over):
                 moves.append(("1", "DRAW", "Draw 1", True),)
 
         active_player = GAME["players"][active_player_uuid]["name"]
         active_player_count = len(GAME["players"][active_player_uuid]["cards"])
-        ordered_players = [(active_player, active_player_count)]
+        ordered_players = [(active_player, active_player_count, active_player_uuid == winner)]
 
         current_uuid = active_player_uuid
         num_players = len(GAME["players"])
@@ -205,7 +205,7 @@ def player(player_uuid):
             current_uuid = GAME["players"][current_uuid]["next"]
             current_name = GAME["players"][current_uuid]["name"]
             current_count = len(GAME["players"][current_uuid]["cards"])
-            ordered_players.append((current_name, current_count))
+            ordered_players.append((current_name, current_count, current_uuid == winner))
 
         return flask.render_template(
             "player.html",
@@ -373,7 +373,7 @@ def play(player_uuid, value, action):
         player["cards"].remove(card)
         name = player["name"]
         if not player["cards"]:
-            GAME["winner"] = name
+            GAME["winner"] = player_uuid
 
         GAME["active_player"] = player["next"]
         if value == "8":
