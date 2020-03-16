@@ -17,6 +17,7 @@ GAME = {
     "active_suit": "",
     "consecutive_draw2": 0,
     "consecutive_skip4": 0,
+    "winner": None,
 }
 LOCK = threading.Lock()
 UNICODE_CARDS = {
@@ -133,6 +134,12 @@ def player(player_uuid):
         # NOTE: Just let a `KeyError` happen here (and below).
         player = GAME["players"][player_uuid]
         name = player["name"]
+        winner = GAME["winner"]
+        if winner is not None:
+            return flask.render_template(
+                "over.html", name=name, winner=winner,
+            )
+
         top_card_value, top_card_suit = GAME["top_card"]
         top_card_display = f"{top_card_value}{UNICODE_CARDS[top_card_suit]}"
 
@@ -182,6 +189,8 @@ def play(player_uuid, value, action):
         target_action = f"CHANGE-{change_suit}"
         if action == target_action:
             with LOCK:
+                # TODO: Check if a winner (here and elsewhere).
+
                 if player_uuid != GAME["active_player"]:
                     raise RuntimeError(
                         "Only active player can play an 8 change",
@@ -219,6 +228,8 @@ def play(player_uuid, value, action):
                         old_suit,
                     )
                 )
+                if not player["cards"]:
+                    GAME["winner"] = name
 
                 return flask.redirect(f"/player/{player_uuid}")
 
@@ -312,6 +323,9 @@ def play(player_uuid, value, action):
             GAME["consecutive_skip4"] += 1
         GAME["active_suit"] = suit
         player["cards"].remove(card)
+        if not player["cards"]:
+            GAME["winner"] = name
+
         GAME["active_player"] = player["next"]
         name = player["name"]
         as_display = f"{value}{UNICODE_CARDS[suit]}"
