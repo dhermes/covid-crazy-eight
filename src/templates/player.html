@@ -1,49 +1,57 @@
 <html>
-
-<head>
+  <head>
     <title>Crazy Eights Game</title>
     <style>
-        .DIAMONDS {
-            color: red;
-        }
+      .DIAMONDS {
+        color: red;
+      }
 
-        .HEARTS {
-            color: red;
-        }
+      .HEARTS {
+        color: red;
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <h1>{{ name }}</h1>
-    <div>
-        Top Card: <span class="{{ top_card_suit }}">{{ top_card }}</span>
-    </div>
+    <div>Top Card: <span class="{{ top_card_suit }}">{{ top_card }}</span></div>
     {% if recent_moves %}
     <div id="recent-moves">
-        <div>Recent Moves:</div>
-        <ul>
-            {% for move_preamble, move_text, action in recent_moves %}
-            <li>{{ move_preamble }} <span class="{{ action }}">{{ move_text }}</span></li>
-            {% endfor %}
-        </ul>
+      <div>Recent Moves:</div>
+      <ul>
+        {% for move_preamble, move_text, action in recent_moves %}
+        <li>
+          {{ move_preamble }} <span class="{{ action }}">{{ move_text }}</span>
+        </li>
+        {% endfor %}
+      </ul>
     </div>
     {% endif %}
     <div>Active Player: {{ active_player }}</div>
     <div>Your cards:</div>
     <ul id="cards">
-        {% for value, action, as_display, can_play in moves %}
-        <li>
-            {% if can_play %}
-            <form action="/play/{{ player_uuid }}/{{ value }}/{{ action }}" method="post">
-                <span class="{{ action }}">{{ as_display }}</span>
-                <button type="submit" formmethod="post">Play</button>
-            </form>
-            {% else %}
-            <span class="{{ action }}">{{ as_display }}</span>
-            {% endif %}
-        </li>
-        {% endfor %}
+      {% for value, action, as_display, can_play in moves %}
+      <li>
+        {% if can_play %}
+        <form
+          action="/play/{{ player_uuid }}/{{ value }}/{{ action }}"
+          method="post"
+        >
+          <span class="{{ action }}">{{ as_display }}</span>
+          <button type="submit" formmethod="post">Play</button>
+        </form>
+        {% else %}
+        <span class="{{ action }}">{{ as_display }}</span>
+        {% endif %}
+      </li>
+      {% endfor %}
     </ul>
-</body>
 
+    <script language="JavaScript" type="text/javascript">
+      function fullReload() {
+        window.location.reload(false);
+      }
+      setTimeout(fullReload, 5000);
+    </script>
+  </body>
 </html>
