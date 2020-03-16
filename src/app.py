@@ -400,7 +400,7 @@ def start_game():
         raise OSError("PLAYERS must be supplied")
     players = [player.strip() for player in players_str.upper().split(",")]
     num_players = len(players)
-    if num_players <= 2:
+    if num_players < 2:
         raise OSError("Must have at least two players")
     if len(set(players)) < num_players:
         raise OSError("Player names are not unique", players_str)
