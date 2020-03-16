@@ -225,6 +225,23 @@ def suit_span(suit):
     return f'<span class="{suit}">{UNICODE_CARDS[suit]}</span>'
 
 
+def next_card():
+    # NOTE: This assumes the deck is locked.
+    if GAME["deck"]:
+        drawn_card = GAME["deck"].pop()
+        return drawn_card
+
+    buried_cards = GAME["buried_cards"]
+    if not buried_cards:
+        raise RuntimeError("There are no more cards left")
+
+    GAME["all_moves"].append(("Shuffled buried", "cards", ""))
+    GAME["buried_cards"] = []
+    random.shuffle(buried_cards)
+    GAME["deck"] = buried_cards
+    return GAME["deck"].pop()
+
+
 @APP.route("/play/<player_uuid>/<value>/<action>", methods=("POST",))
 def play(player_uuid, value, action):
     for change_suit in ("CLUBS", "DIAMONDS", "SPADES", "HEARTS"):
@@ -281,7 +298,7 @@ def play(player_uuid, value, action):
 
             player = GAME["players"][player_uuid]
             name = player["name"]
-            GAME["all_moves"].append((f"{name} got", "skipped", ""),)
+            GAME["all_moves"].append((f"{name} got", "skipped", ""))
             GAME["consecutive_skip4"] = 0
             GAME["active_player"] = player["next"]
 
@@ -304,7 +321,7 @@ def play(player_uuid, value, action):
                         "Invalid draw amount", value, GAME["consecutive_draw2"]
                     )
 
-                drawn_card = GAME["deck"].pop()
+                drawn_card = next_card()
                 player["cards"].append(drawn_card)
                 GAME["all_moves"].append((f"{name} drew", "a card", ""),)
             else:
@@ -314,7 +331,7 @@ def play(player_uuid, value, action):
                         "Invalid draw amount", value, GAME["consecutive_draw2"]
                     )
                 for _ in range(int_value):
-                    drawn_card = GAME["deck"].pop()
+                    drawn_card = next_card()
                     player["cards"].append(drawn_card)
                 GAME["all_moves"].append(
                     (f"{name} drew", f"{value} cards", ""),
