@@ -19,7 +19,6 @@ GAME = {
     "consecutive_draw2": 0,
     "consecutive_skip4": 0,
     "winner": None,
-    "top_card_extra": "",
 }
 LOCK = threading.Lock()
 UNICODE_CARDS = {
@@ -139,6 +138,19 @@ def can_play(card, player_uuid):
     return value == GAME["active_value"] or suit == GAME["active_suit"]
 
 
+def get_top_card_extra():
+    top_card_value, _ = GAME["top_card"]
+    if top_card_value != "8":
+        return ""
+
+    active_suit = GAME["active_suit"]
+    if active_suit == "":
+        return ""
+
+    span_elt = suit_span(active_suit)
+    return flask.Markup(f" ({span_elt})")
+
+
 @APP.route("/player/<player_uuid>", methods=("GET",))
 def player(player_uuid):
     with LOCK:
@@ -201,7 +213,7 @@ def player(player_uuid):
             recent_moves=list(reversed(GAME["all_moves"][-3:])),
             top_card_suit=top_card_suit,
             top_card=top_card_display,
-            top_card_extra=GAME["top_card_extra"],
+            top_card_extra=get_top_card_extra(),
             ordered_players=ordered_players,
             moves=moves,
             player_uuid=player_uuid,
@@ -239,7 +251,6 @@ def play(player_uuid, value, action):
                 GAME["active_suit"] = change_suit
                 GAME["active_player"] = player_uuid
                 span_elt = suit_span(change_suit)
-                GAME["top_card_extra"] = flask.Markup(f" ({span_elt})")
 
                 player = GAME["players"][player_uuid]
                 GAME["active_player"] = player["next"]
@@ -336,7 +347,6 @@ def play(player_uuid, value, action):
         top_card = GAME["top_card"]
         GAME["buried_cards"].append(top_card)
         GAME["top_card"] = card
-        GAME["top_card_extra"] = ""
         GAME["active_value"] = value
         if value == "2":
             GAME["consecutive_draw2"] += 1
@@ -415,7 +425,6 @@ def start_game():
                 random.shuffle(new_deck)
 
         GAME["top_card"] = top_card
-        GAME["top_card_extra"] = ""
         top_card_value, top_card_suit = top_card
         GAME["active_value"] = top_card_value
         GAME["active_suit"] = top_card_suit
