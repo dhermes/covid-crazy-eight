@@ -113,10 +113,6 @@ def can_play(card, player_uuid):
 
     value, suit = card
 
-    # If an 8 is showing, only the suit can match.
-    if GAME["active_value"] == "8":
-        return suit == GAME["active_suit"]
-
     # If a 4, need to check first if there is an active "skip streak" open.
     if GAME["active_value"] == "4" and GAME["consecutive_skip4"] > 0:
         return value == "4"
@@ -124,6 +120,13 @@ def can_play(card, player_uuid):
     # If a 2, need to check first if there is an active "draw 2 streak" open.
     if GAME["active_value"] == "2" and GAME["consecutive_draw2"] > 0:
         return value == "2"
+
+    if value == "8":
+        return True
+
+    # If an 8 is showing, only the suit can match.
+    if GAME["active_value"] == "8":
+        return suit == GAME["active_suit"]
 
     return value == GAME["active_value"] or suit == GAME["active_suit"]
 
