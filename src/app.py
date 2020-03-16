@@ -90,6 +90,17 @@ def favicon():
     )
 
 
+@APP.route("/admin", methods=("GET",))
+def admin():
+    players = []
+    for player_uuid, player in GAME["players"].items():
+        url = f"/player/{player_uuid}"
+        name = player["name"]
+        players.append((name, url))
+
+    return flask.render_template("admin.html", players=players)
+
+
 def for_compare_cards(card):
     return DECK.index(card)
 
@@ -332,7 +343,6 @@ def start_game():
             player_uuid = str(uuid.uuid4())
             reverse_map[player] = player_uuid
             GAME["players"][player_uuid] = {"name": player}
-            print(f"{player_uuid} <-> {player}")
 
         for i, player in enumerate(players):
             player_uuid = reverse_map[player]

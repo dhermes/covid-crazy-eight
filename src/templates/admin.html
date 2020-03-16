@@ -1,0 +1,15 @@
+<html>
+  <head>
+    <title>Crazy Eights Admin</title>
+  </head>
+
+  <body>
+    <ul>
+      {% for name, url in players %}
+      <li>
+        <a href="{{ url }}">{{ name }}</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </body>
+</html>
