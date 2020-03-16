@@ -7,6 +7,7 @@ import flask
 
 
 PORT = int(os.environ.get("PORT", 15071))
+DEFAULT_PLAYERS = "Joe,Eve,Tim"
 DEBUG = "DEBUG" in os.environ
 APP = flask.Flask(__name__)
 METHODS = ("GET", "POST", "PUT", "PATCH", "DELETE")
@@ -400,7 +401,7 @@ def catch_all(path):
 
 
 def start_game():
-    players_str = os.environ.get("PLAYERS")
+    players_str = os.environ.get("PLAYERS", DEFAULT_PLAYERS)
     if players_str is None:
         raise OSError("PLAYERS must be supplied")
     players = [player.strip() for player in players_str.upper().split(",")]
