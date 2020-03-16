@@ -10,6 +10,10 @@
         color: red;
       }
 
+      .crazy-eight-form {
+        margin: 0;
+      }
+
       .crazy-eight-button {
         -webkit-writing-mode: inherit;
         background: none;
@@ -59,7 +63,7 @@
       {% for value, action, as_display, can_play in moves %}
       <li>
         {% if can_play %}
-        <form action="/play/{{ player_uuid }}/{{ value }}/{{ action }}" method="post">
+        <form class="crazy-eight-form" action="/play/{{ player_uuid }}/{{ value }}/{{ action }}" method="post">
           <button class="crazy-eight-button" type="submit" formmethod="post">
             <span class="{{ action }}">{{ as_display }}</span>
           </button>
