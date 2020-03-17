@@ -131,3 +131,9 @@
 
 # "Locally" installed binaries
 ngrok
+
+# Feels needed for dev but not in the container
+Dockerfile
+LICENSE
+README.md
+requirements.txt.in
