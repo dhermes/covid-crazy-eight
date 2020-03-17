@@ -38,6 +38,7 @@ gcloud run deploy \
   --image "gcr.io/${PROJECT_ID}/covid-crazy-eight" \
   --set-env-vars '^:^PLAYERS=Larry,Sergey,Sundar' \
   --port 15071 \
+  --max-instances 1 \
   --allow-unauthenticated \
   --region us-west1 \
   --platform managed \
